@@ -1,0 +1,38 @@
+
+.visContainer{
+	background-color: #FAFAFA;
+	height: 720px;
+	max-height: 720px;
+	min-height: 720px;
+	width: 100%;
+	max-width: 100%;
+	min-width: 100%;
+	margin: auto;
+	border: 1px	solid black;
+}
+
+.node {
+    fill: #ccc;
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.link {
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.chart {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+}
+ 
+.axis path,.axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+ 
+.bar {
+	fill: #33b5e5;
+}

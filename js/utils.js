@@ -29,10 +29,10 @@ function isNumber(numberString) {
 	return ((numberRegEx.test(numberString)) && (!isNaN(parseFloat(numberString))));
 }
 
-function randRange(min, max){
+function randRange(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function echo(e){
+function echo(e) {
 	console.log(e);
 }

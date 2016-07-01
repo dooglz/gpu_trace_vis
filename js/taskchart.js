@@ -22,6 +22,9 @@ class TaskChart {
         this.defaultfillFunc = function (d, i) { return d3.rgb(64 + Math.random() * 128, 64 + Math.random() * 128, 64 + Math.random() * 128); }
         this.fillfunc = this.defaultfillFunc;
     }
+    Clear(){
+        this.svg.remove();
+    }
     Redraw() {
         this.width = parseInt(this.container.style("width"));
         this.height = parseInt(this.container.style("height"));

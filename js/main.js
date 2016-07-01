@@ -1,5 +1,14 @@
 
 $(document).ready(function () { });
+class ComputeUnitOccupancy {
+    constructor(cu, startTick, occ) {
+		this.occ = occ;
+		//used for vis
+		this.start = startTick;
+        this.end = startTick + 1;
+		this.lane = cu;
+    }
+}
 
 class InstructionInstance {
     constructor(id, cu, wf, startTick, name, type) {
@@ -75,17 +84,19 @@ var ParseTrace = function (trace) {
 	allTextLines = trace.split(/\r\n|\n/);
 	trace = "";
 	var clock = 0;
+	var startTick =-1;
 	var mostCU=0;
-	var step = 0;
+	var mostWF=0;
 	Instuctions = [];
 	allTextLines.forEach(v => {
 		if (v.startsWith("c clk=")) {
 			//clock
-			step++;
 			clock = parseInt(v.substring(6));
+			if (startTick === -1){startTick = clock;}
 		} else if (v.startsWith("si.new_inst")) {
 			let oo = parseToObj(v);
 			mostCU =  oo.cu > mostCU ? oo.cu : mostCU;
+			mostWF =  oo.wf > mostWF ? oo.wf : mostWF;
 			let type = detemineAsmType(oo.asm);
 			//Instuctions.set(oo.id + "_" + oo.cu, new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
 			Instuctions.push(new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
@@ -101,29 +112,56 @@ var ParseTrace = function (trace) {
 			}
 		}
 	});
-	metrics = new Array(mostCU+1);  
+	metrics = {};
+	metrics.wfCount = mostWF+1;
+	metrics.cuCount = mostCU+1;
+	metrics.cu = new Array(mostCU+1);  
+	metrics.startTick = startTick;
+	metrics.endTick = clock;
 };
-
+var cuocc;
 var CalcMetrics = function (trace) {
-	for(let i = 0; i < metrics.length; i++){
-		metrics[i] = {};
-		metrics[i].asms = new Map();
+	for(let i = 0; i < metrics.cu.length; i++){
+		metrics.cu[i] = {};
+		metrics.cu[i].asms = new Map();
+		metrics.cu[i].occupancy = [new ComputeUnitOccupancy(i,metrics.startTick,0)];	
+		metrics.cu[i].rawOccupancy = new Array(metrics.endTick+1 - metrics.startTick);
+		metrics.cu[i].rawOccupancy.fill(0); 
+		metrics.cu[i].wfActivity = new Array(metrics.endTick+1 - metrics.startTick);
+		metrics.cu[i].wfboolActivity = new Array(metrics.endTick+1 - metrics.startTick);
+		metrics.cu[i].maxWfAcitivity =0;
+		metrics.cu[i].maxRawWfAcitivity =0;
+		for(let k = 0; k < metrics.cu[i].wfActivity.length; k++){
+			metrics.cu[i].wfActivity[k] = new Array(metrics.wfCount);
+			metrics.cu[i].wfActivity[k].fill(0);
+			metrics.cu[i].wfboolActivity[k] = new Array(metrics.wfCount);
+			metrics.cu[i].wfboolActivity[k].fill(false);
+		}
 	}
+
 	Instuctions.forEach(i => {
-		if (metrics[i.cu].asms.has(i.name)) {
-			let mm = metrics[i.cu].asms.get(i.name);
+		//oocupancy
+		for(let j = (i.start - metrics.startTick); j < ((i.end-1) - metrics.startTick); j++){
+			metrics.cu[i.cu].rawOccupancy[j]++;
+			metrics.cu[i.cu].wfActivity[j][i.wf]++;
+			metrics.cu[i.cu].wfboolActivity[j][i.wf] = true;
+			metrics.cu[i.cu].maxWfAcitivity = Math.max(metrics.cu[i.cu].maxWfAcitivity,metrics.cu[i.cu].wfActivity[j][i.wf] );
+			metrics.cu[i.cu].maxRawWfAcitivity = Math.max(metrics.cu[i.cu].maxRawWfAcitivity,metrics.cu[i.cu].rawOccupancy[j]);
+		}
+		if (metrics.cu[i.cu].asms.has(i.name)) {
+			let mm = metrics.cu[i.cu].asms.get(i.name);
 			mm.count++;
 			mm.ticks.push(i.end - i.start);
 			mm.tickTotal += (i.end - i.start);
 		} else {
-			metrics[i.cu].asms.set(i.name, new InstructionMetric(i.name, i.end - i.start));
+			metrics.cu[i.cu].asms.set(i.name, new InstructionMetric(i.name, i.end - i.start));
 		}
 	});
 	let mostCalled = 0;
 	let Expesnive = 0;
 	let ExpesniveA = 0;
 	let mostTicks = 0;
-	metrics.forEach(m => {
+	metrics.cu.forEach(m => {
 		m.asms.forEach(im => {
 			if (mostCalled === 0 || im.count > mostCalled.count) {
 				mostCalled = im;

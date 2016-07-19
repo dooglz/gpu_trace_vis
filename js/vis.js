@@ -11,15 +11,23 @@ var colourScalefunc = function (d) {
 }
 
 let tc;
+let cuVisSvg = null;
 var InitVis = function () {
+	if(tc){tc.Clear()};
+	if(cuVisSvg){ClearCuvis() ;}
 	tc = new TaskChart(d3.select("#visContainerDiv"), Instuctions, 4);
 	tc.setFillfunc(colourScalefunc);
 	tc.Redraw();
 }
 var maxOcc;
 var acitivityMode = false;
+
+var ClearCuvis = function () {
+	cuVisSvg.remove();
+}
+
 var ShowCuvis = function () {
-//	tc.Clear();
+	tc.Clear();
 	let data = metrics.cu[0];/*
 	for(let i = 0; i < metrics.cu.length; i++){
 		for(let j = 0; j < metrics.cu[i].rawOccupancy.length; j++){
@@ -38,9 +46,9 @@ var ShowCuvis = function () {
 	let min = 0;
 
 	if (acitivityMode) {
-		 maxOcc = data.maxRawWfAcitivity
+		 maxOcc = data.maxRawWfAcitivity;
 	} else {
-		 maxOcc = data.maxWfAcitivity
+		 maxOcc = data.maxboolWfAcitivity;
 	}
 	let xScale = d3.scale.linear().domain([min, max]).range([0, width - (padding[2] + padding[3])]).clamp(true);
 	let yCatScale = d3.scale.ordinal().domain(d3.range(numberOfLanes)).rangeRoundBands([0, height - (padding[0] + padding[1])]);
@@ -58,16 +66,16 @@ var ShowCuvis = function () {
 		})
 
 
-	let svg = container.append('svg').attr('width', width).attr('height', height);
-        svg.append("g").attr("class", "x axis")
+	cuVisSvg = container.append('svg').attr('width', width).attr('height', height);
+        cuVisSvg.append("g").attr("class", "x axis")
             .attr("transform", "translate(" + padding[2] + ", " + (height - padding[1]) + ")")
             .transition().call(xAxis);
-        svg.append("g").attr("class", "y axis")
+        cuVisSvg.append("g").attr("class", "y axis")
             .attr("transform", "translate(" + padding[2] + ", 0)")
             .transition().call(yAxis);
 
 
-	svg.append("g")
+	cuVisSvg.append("g")
 		.attr("transform", "translate(" + padding[2] + ", 0)").append("path")
 		.datum(acitivityMode ? data.rawOccupancy : data.wfboolActivity)
 		.attr("class", "area")

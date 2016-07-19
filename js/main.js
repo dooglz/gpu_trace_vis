@@ -130,6 +130,7 @@ var CalcMetrics = function (trace) {
 		metrics.cu[i].wfActivity = new Array(metrics.endTick+1 - metrics.startTick);
 		metrics.cu[i].wfboolActivity = new Array(metrics.endTick+1 - metrics.startTick);
 		metrics.cu[i].maxWfAcitivity =0;
+		metrics.cu[i].maxboolWfAcitivity =0;
 		metrics.cu[i].maxRawWfAcitivity =0;
 		for(let k = 0; k < metrics.cu[i].wfActivity.length; k++){
 			metrics.cu[i].wfActivity[k] = new Array(metrics.wfCount);
@@ -145,7 +146,10 @@ var CalcMetrics = function (trace) {
 			metrics.cu[i.cu].rawOccupancy[j]++;
 			metrics.cu[i.cu].wfActivity[j][i.wf]++;
 			metrics.cu[i.cu].wfboolActivity[j][i.wf] = true;
-			metrics.cu[i.cu].maxWfAcitivity = Math.max(metrics.cu[i.cu].maxWfAcitivity,metrics.cu[i.cu].wfActivity[j][i.wf] );
+			metrics.cu[i.cu].maxboolWfAcitivity = Math.max(metrics.cu[i.cu].maxboolWfAcitivity,metrics.cu[i.cu].wfboolActivity[j].reduce(function (a, b) {
+				return a + b;
+			} ));
+			metrics.cu[i.cu].maxWfAcitivity = Math.max(metrics.cu[i.cu].maxboolWfAcitivity,metrics.cu[i.cu].wfActivity[j][i.wf] );
 			metrics.cu[i.cu].maxRawWfAcitivity = Math.max(metrics.cu[i.cu].maxRawWfAcitivity,metrics.cu[i.cu].rawOccupancy[j]);
 		}
 		if (metrics.cu[i.cu].asms.has(i.name)) {

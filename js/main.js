@@ -1,5 +1,6 @@
 
-$(document).ready(function () { });
+$(document).ready(function () { GetFilesList();});
+
 class ComputeUnitOccupancy {
     constructor(cu, startTick, occ) {
 		this.occ = occ;
@@ -30,6 +31,31 @@ class InstructionMetric {
 		this.ticks = [ticks];
 		this.tickTotal = ticks;
     }
+}
+
+function Loadfies(name){
+ let jqxhr = $.get("data/"+name, function (data2) {
+		console.log(data2.substring(0, 200));
+		ParseTrace(data2);
+		CalcMetrics();
+		InitVis();
+	});
+	jqxhr.fail(function (e) {
+		console.log("error", e);
+	});
+}
+
+
+function GetFilesList() {
+  let jqxhr = $.getJSON("files.php", function (data) {
+	  console.log(data);
+	  data.forEach(function(element) {
+		  $('<button/>').text(element).click(function () { Loadfies(element); }).appendTo($("#filesDiv"));
+	  }, this);
+  });
+  jqxhr.fail(function (e) {
+    console.log("error", e);
+  });
 }
 
 var openFile = function (event) {

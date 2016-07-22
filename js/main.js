@@ -114,6 +114,8 @@ var ParseTrace = function (trace) {
 	var mostCU=0;
 	var mostWF=0;
 	Instuctions = [];
+	metrics = {};
+	metrics.wavefronts = [];
 	allTextLines.forEach(v => {
 		if (v.startsWith("c clk=")) {
 			//clock
@@ -123,6 +125,10 @@ var ParseTrace = function (trace) {
 			let oo = parseToObj(v);
 			mostCU =  oo.cu > mostCU ? oo.cu : mostCU;
 			mostWF =  oo.wf > mostWF ? oo.wf : mostWF;
+			if(metrics.wavefronts[oo.wf] === undefined){
+				metrics.wavefronts[oo.wf] = {};
+				metrics.wavefronts[oo.wf].cu = oo.cu;
+			}
 			let type = detemineAsmType(oo.asm);
 			//Instuctions.set(oo.id + "_" + oo.cu, new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
 			Instuctions.push(new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
@@ -138,7 +144,7 @@ var ParseTrace = function (trace) {
 			}
 		}
 	});
-	metrics = {};
+
 	metrics.wfCount = mostWF+1;
 	metrics.cuCount = mostCU+1;
 	metrics.cu = new Array(mostCU+1);  

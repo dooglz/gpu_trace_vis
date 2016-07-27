@@ -120,6 +120,7 @@ function ParseTrace(trace) {
   metrics = {};
   metrics.wavefronts = [];
   allTextLines.forEach(v => {
+    v = v.trim();
     if (v.startsWith("c clk=")) {
       // clock
       clock = parseInt(v.substring(6), 10);
@@ -135,10 +136,10 @@ function ParseTrace(trace) {
         metrics.wavefronts[oo.wf].cu = oo.cu;
       }
       let type = detemineAsmType(oo.asm);
-      //Instuctions.set(oo.id + "_" + oo.cu, new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
+      // Instuctions.set(oo.id + "_" + oo.cu, new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
       Instuctions.push(new InstructionInstance(oo.id, oo.cu, oo.wf, clock, oo.asm, type));
     } else if (v.startsWith("si.inst")) {
-      //parseToObj(v);
+      // parseToObj(v);
     } else if (v.startsWith("si.end_inst")) {
       var oo = parseToObj(v);
       var inst = Instuctions.find(it => {
@@ -161,36 +162,50 @@ function ParseTrace(trace) {
 
 var cuocc;
 function CalcMetrics(trace) {
+  metrics.globalMaxInstActivity = 0; // most instructions in flight at any one time on any CU
+  metrics.globalMaxWfInstActivity = 0; // most instructions in flight at any one time on a single WF on any CU
+  metrics.globalMaxWfActivity = 0; // Most wavefronts doing anything at one time on any cu;
+
   for (let i = 0; i < metrics.cu.length; i++) {
     metrics.cu[i] = {};
     metrics.cu[i].asms = new Map();
-    metrics.cu[i].occupancy = [new ComputeUnitOccupancy(i, metrics.startTick, 0)];
-    metrics.cu[i].rawOccupancy = new Array(metrics.endTick + 1 - metrics.startTick);
-    metrics.cu[i].rawOccupancy.fill(0);
+
+    // number of isntructions in flight at this tick in this cu;
+    metrics.cu[i].instActivity = new Array(metrics.endTick + 1 - metrics.startTick);
+    metrics.cu[i].instActivity.fill(0);
+    // number of isntructions in flight at this tick in this cu, per WF;
+    metrics.cu[i].wfInstActivity = new Array(metrics.endTick + 1 - metrics.startTick);
+    // number of wavefronts doing anything at this tick on this CU;
     metrics.cu[i].wfActivity = new Array(metrics.endTick + 1 - metrics.startTick);
-    metrics.cu[i].wfboolActivity = new Array(metrics.endTick + 1 - metrics.startTick);
-    metrics.cu[i].maxWfAcitivity = 0;
-    metrics.cu[i].maxboolWfAcitivity = 0;
-    metrics.cu[i].maxRawWfAcitivity = 0;
+
+    metrics.cu[i].maxInstActivity = 0; // most instructions in flight at any one time on a CU
+    metrics.cu[i].maxWfInstActivity = 0; // most instructions in flight at any one time on a single WF on a CU
+    metrics.cu[i].maxWfActivity = 0; // Most wavefronts doing anything at one time on a cu;
+
     for (let k = 0; k < metrics.cu[i].wfActivity.length; k++) {
+      metrics.cu[i].wfInstActivity[k] = new Array(metrics.wfCount);
+      metrics.cu[i].wfInstActivity[k].fill(0);
       metrics.cu[i].wfActivity[k] = new Array(metrics.wfCount);
-      metrics.cu[i].wfActivity[k].fill(0);
-      metrics.cu[i].wfboolActivity[k] = new Array(metrics.wfCount);
-      metrics.cu[i].wfboolActivity[k].fill(false);
+      metrics.cu[i].wfActivity[k].fill(false);
     }
   }
 
   Instuctions.forEach(i => {
-    //oocupancy
+    // oocupancy
     for (let j = (i.start - metrics.startTick); j < ((i.end - 1) - metrics.startTick); j++) {
-      metrics.cu[i.cu].rawOccupancy[j]++;
-      metrics.cu[i.cu].wfActivity[j][i.wf]++;
-      metrics.cu[i.cu].wfboolActivity[j][i.wf] = true;
-      metrics.cu[i.cu].maxboolWfAcitivity = Math.max(metrics.cu[i.cu].maxboolWfAcitivity, metrics.cu[i.cu].wfboolActivity[j].reduce(function(a, b) {
+      metrics.cu[i.cu].instActivity[j]++;
+      metrics.cu[i.cu].wfInstActivity[j][i.wf]++;
+      metrics.cu[i.cu].wfActivity[j][i.wf] = true;
+
+      metrics.cu[i.cu].maxInstActivity = Math.max(metrics.cu[i.cu].maxInstActivity, metrics.cu[i.cu].instActivity[j]);
+      metrics.cu[i.cu].maxWfInstActivity = Math.max(metrics.cu[i.cu].maxWfInstActivity, metrics.cu[i.cu].wfInstActivity[j][i.wf]);
+      metrics.cu[i.cu].maxWfActivity = Math.max(metrics.cu[i.cu].maxWfActivity, metrics.cu[i.cu].wfActivity[j].reduce(function(a, b) {
         return a + b;
       }));
-      metrics.cu[i.cu].maxWfAcitivity = Math.max(metrics.cu[i.cu].maxboolWfAcitivity, metrics.cu[i.cu].wfActivity[j][i.wf]);
-      metrics.cu[i.cu].maxRawWfAcitivity = Math.max(metrics.cu[i.cu].maxRawWfAcitivity, metrics.cu[i.cu].rawOccupancy[j]);
+
+      metrics.globalMaxInstActivity = Math.max(metrics.globalMaxInstActivity, metrics.cu[i.cu].maxInstActivity);
+      metrics.globalMaxWfInstActivity = Math.max(metrics.globalMaxWfInstActivity, metrics.cu[i.cu].maxWfInstActivity);
+      metrics.globalMaxWfActivity = Math.max(metrics.globalMaxWfActivity, metrics.cu[i.cu].maxWfActivity);
     }
     if (metrics.cu[i.cu].asms.has(i.name)) {
       let mm = metrics.cu[i.cu].asms.get(i.name);
@@ -221,7 +236,7 @@ function CalcMetrics(trace) {
       if (mostTicks === 0 || im.tickTotal > mostTicks.tickTotal) {
         mostTicks = im;
       }
-    })
+    });
   });
   console.log(`Most called:`, mostCalled, mostCalled.count);
   console.log(`Most Expesnive call:`, Expesnive, ExpesniveA);

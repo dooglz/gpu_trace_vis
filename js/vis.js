@@ -33,26 +33,31 @@ function InitVis() {
   tc.Redraw();
 }
 
-var acitivityMode = false;
+var acitivityMode = true;
 
 function ClearCuvis() {
-  cuVisSvg.remove();
+  if (cuVisSvg) {
+    cuVisSvg.remove();
+  }
 }
 
 function ShowCuvis() {
   tc.Clear();
-  let max = metrics.cu[0].wfboolActivity.length;
-  let min = 0;
+  ClearCuvis();
+  let Ymax = metrics.globalMaxInstActivity;
+  let Ymin = 0;
+  let Xmax = metrics.cu[0].instActivity.length;
+  let Xmin = 0;
   let padding = [0, 30, 20, 10];
   let container = d3.select("#visContainerDiv");
   let width = parseInt(container.style("width"), 10);
   let height = parseInt(container.style("height"), 10);
   let numberOfLanes = metrics.cuCount;
-  let xScale = d3.scale.linear().domain([min, max]).range([0, width - (padding[2] + padding[3])]).clamp(true);
-  let yCatScale = d3.scale.ordinal().domain(d3.range(numberOfLanes)).rangeRoundBands([0, height - (padding[0] + padding[1])]);
+  let xScale = d3.scale.linear().domain([Xmin, Xmax]).range([0, width - (padding[2] + padding[3])]).clamp(true);
   let yScale = d3.scale.ordinal().domain(d3.range(numberOfLanes)).rangeRoundBands([0, height - (padding[0] + padding[1])]);
+  let yScaleLocal = d3.scale.ordinal().domain(d3.range(Ymax + 1)).rangeRoundBands([0, yScale.rangeBand()]);
   let xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickSubdivide(true).tickSize(8).tickPadding(8);
-  let yAxis = d3.svg.axis().scale(yCatScale).orient("left").tickSize(0);
+  let yAxis = d3.svg.axis().scale(yScale).orient("left").tickSize(0);
 
   cuVisSvg = container.append('svg').attr('width', width).attr('height', height);
   cuVisSvg.append("g").attr("class", "x axis")
@@ -63,23 +68,29 @@ function ShowCuvis() {
     .transition().call(yAxis);
 
 
-  for (let i = 0; i < metrics.cuCount; i++) {
-    let data = metrics.cu[i];
+  for (let i = 0; i < numberOfLanes; i++) {
+    let qqr = i;
+    let data = metrics.cu[qqr];
     let area = d3.svg.area()
-      .x(function(d, i) {
-        return xScale(i);
+      .x(function(d, index) {
+        return xScale(index);
       })
-      .y0(yCatScale.rangeBand())
-      .y1(function(d, i) {
-        return yCatScale.rangeBand() - yScale((acitivityMode ? d : d.reduce(function(a, b) {
+      .y0(yScale(qqr) + yScale.rangeBand())
+     
+      .y1(function(d, index) {
+        let a = (yScale(qqr) + yScale.rangeBand());
+        let b = yScaleLocal((acitivityMode ? d : d.reduce(function(a, b) {
           return a + b;
         })));
+        return (a - b);
       });
-
+    let col = catagoryColourScale10(qqr);
     cuVisSvg.append("g")
-      .attr("transform", "translate(" + padding[2] + "," + yScale(i) + ")").append("path")
-      .datum(acitivityMode ? data.rawOccupancy : data.wfboolActivity)
-      .attr("class", "area")
-      .attr("d", area);
+      .attr("transform", "translate(" + padding[2] + ",0)").append("path")
+      //.datum(acitivityMode ? data.instActivity : data.wfActivity)
+      .datum(data.instActivity)
+      //.attr("class", "area")
+      .attr("d", area)
+      .attr("fill", col);
   }
 }

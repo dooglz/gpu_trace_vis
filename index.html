@@ -19,9 +19,10 @@
 			<!-- /visContainerDiv -->
 		</div>
 		<div class="controlContainer" id="controlContainerDiv">
-			<input type='file' accept='text/plain' onchange='openFile(event)'>
+			<input type='file' accept='text/plain' onchange='openFileFromDisk(event)'>
 			<button type="button" onclick='InitVis()'>WaveFront View</button>
-			<button type="button" onclick='ShowCuvis()'>Compute Unit View</button><br>
+			<button type="button" onclick='ShowCuvis()'>Compute Unit View</button>
+			<input type="checkbox" id="cbox1" value="first_checkbox" onchange="{showWfCu = !showWfCu}"><br>
 			<!-- /controlContainerDiv -->
 		</div>
 		</hr>

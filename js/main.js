@@ -75,7 +75,7 @@ function openFileFromDisk(event) {
   reader.readAsText(input.files[0]);
 }
 
-var parseToObj = function(line) {
+function parseToObj(line) {
   var v = false;
   var obj = {};
   var ks = "";
@@ -83,8 +83,10 @@ var parseToObj = function(line) {
   [...line].forEach(c => {
     switch (c) {
       case " ":
+        if (v) {
+          obj[ks.replace(/['"]+/g, '')] = vs.replace(/['"]+/g, '');
+        }
         v = false;
-        obj[ks.replace(/['"]+/g, '')] = vs.replace(/['"]+/g, '');
         ks = "";
         vs = "";
         break;
@@ -101,12 +103,17 @@ var parseToObj = function(line) {
     }
   });
   obj[ks.replace(/['"]+/g, '')] = vs.replace(/['"]+/g, '');
-  obj.cu = parseInt(obj.cu, 10);
-  obj.wf = parseInt(obj.wf, 10);
+  if (obj.cu) {
+    obj.cu = parseInt(obj.cu, 10);
+  }
+  if (obj.wf) {
+    obj.wf = parseInt(obj.wf, 10);
+  }
   return obj;
 }
 
 var Instuctions;
+var memops;
 var metrics;
 function ParseTrace(trace) {
   var allTextLines = [];
@@ -117,6 +124,7 @@ function ParseTrace(trace) {
   var mostCU = 0;
   var mostWF = 0;
   Instuctions = [];
+  memops = [];
   metrics = {};
   metrics.wavefronts = [];
   allTextLines.forEach(v => {
@@ -141,12 +149,26 @@ function ParseTrace(trace) {
     } else if (v.startsWith("si.inst")) {
       // parseToObj(v);
     } else if (v.startsWith("si.end_inst")) {
-      var oo = parseToObj(v);
-      var inst = Instuctions.find(it => {
+      let oo = parseToObj(v);
+      let inst = Instuctions.find(it => {
         return (oo.id === it.id && oo.cu === it.cu);
       });
       if (inst === undefined) {
         console.error(oo.id + "_" + oo.cu);
+      } else {
+        inst.end = clock;
+      }
+    } else if (v.startsWith("mem.new_access name=")) {
+      let om = parseToObj(v);
+      om.start = clock;
+      memops.push(om);
+    } else if (v.startsWith("mem.end_access name=")) {
+      let om = parseToObj(v);
+      let inst = memops.find(it => {
+        return (om.name === it.name);
+      });
+      if (inst === undefined) {
+        console.error(om.name);
       } else {
         inst.end = clock;
       }
@@ -158,6 +180,7 @@ function ParseTrace(trace) {
   metrics.cu = new Array(mostCU + 1);
   metrics.startTick = startTick;
   metrics.endTick = clock;
+  metrics.ticks = clock - startTick;
 }
 
 var cuocc;
@@ -241,6 +264,19 @@ function CalcMetrics(trace) {
   console.log(`Most called:`, mostCalled, mostCalled.count);
   console.log(`Most Expesnive call:`, Expesnive, ExpesniveA);
   console.log(`Longest Running:`, mostTicks, mostTicks.tickTotal);
+
+  metrics.memory = new Array(metrics.ticks);
+  metrics.maxMemoryOps = 0;
+  for (let i = 0; i < metrics.ticks; i++) {
+    metrics.memory[i] = 0;
+    for (let j = 0; j < memops.length; j++) {
+      let m = memops[j];
+      if (m.start <= metrics.startTick + i && m.end >= metrics.startTick + i) {
+        metrics.memory[i]++;
+      }
+      metrics.maxMemoryOps = Math.max(metrics.maxMemoryOps, metrics.memory[i]);
+    }
+  }
 }
 
 var INSTRUCTIONTYPE = {

@@ -20,6 +20,7 @@ function colourCUfunc(d) {
 let showWfCu = false;
 let tc;
 let cuVisSvg = null;
+let memVisSvg = null;
 
 function InitVis() {
   if (tc) {
@@ -40,6 +41,48 @@ function ClearCuvis() {
     cuVisSvg.remove();
   }
 }
+
+function ShowMemVis() {
+  let Ymax = metrics.maxMemoryOps;
+  let Ymin = 0;
+  let Xmax = metrics.cu[0].instActivity.length;
+  let Xmin = 0;
+  let padding = [0, 30, 20, 10];
+  let container = d3.select("#visContainerDiv");
+  let width = parseInt(container.style("width"), 10);
+  let height = parseInt(container.style("height"), 10);
+  let xScale = d3.scale.linear().domain([Xmin, Xmax]).range([0, width - (padding[2] + padding[3])]).clamp(true);
+  let yScale = d3.scale.linear().domain([Ymin, Ymax]).range([0, height - (padding[0] + padding[1])]);
+  let xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickSubdivide(true).tickSize(8).tickPadding(8);
+  let yAxis = d3.svg.axis().scale(yScale).orient("left").tickSize(0);
+
+  memVisSvg = container.append('svg').attr('width', width).attr('height', height);
+  memVisSvg.append("g").attr("class", "x axis")
+    .attr("transform", "translate(" + padding[2] + ", " + (height - padding[1]) + ")")
+    .transition().call(xAxis);
+  memVisSvg.append("g").attr("class", "y axis")
+    .attr("transform", "translate(" + padding[2] + ", 0)")
+    .transition().call(yAxis);
+
+  let data = metrics.memory;
+  let area = d3.svg.area()
+    .x(function(d, index) {
+      return xScale(index);
+    })
+    .y1(yScale(Ymax))
+    .y0(function(d) {
+      return yScale(Ymax) - yScale(d);
+    });
+  let col = catagoryColourScale10(0);
+  memVisSvg.append("g")
+    .attr("transform", "translate(" + padding[2] + ",0)").append("path")
+    //.datum(acitivityMode ? data.instActivity : data.wfActivity)
+    .datum(data)
+    //.attr("class", "area")
+    .attr("d", area)
+    .attr("fill", col);
+}
+
 
 function ShowCuvis() {
   tc.Clear();
@@ -76,7 +119,7 @@ function ShowCuvis() {
         return xScale(index);
       })
       .y0(yScale(qqr) + yScale.rangeBand())
-     
+
       .y1(function(d, index) {
         let a = (yScale(qqr) + yScale.rangeBand());
         let b = yScaleLocal((acitivityMode ? d : d.reduce(function(a, b) {

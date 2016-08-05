@@ -42,27 +42,64 @@ function ClearCuvis() {
   }
 }
 
+function ClearMemvis() {
+  if (tc) {
+    tc.Clear();
+  }
+  if (cuVisSvg) {
+    ClearCuvis();
+  }
+  if (memVisSvg) {
+    memVisSvg.remove();
+  }
+  $("#visContainerDiv").toggleClass( "visContainer", true );
+  $("#visContainerDiv").toggleClass( "visContainer1", false );
+  $("#visContainerDiv2").remove();
+
+   tc.Redraw();
+
+}
+function handleMemCheck(cb) {
+  if(cb.checked){
+    ShowMemVis();
+  }else{
+    ClearMemvis();
+  }
+}
 function ShowMemVis() {
+  //make the current vis smaller
+  if (tc) {
+    tc.Clear();
+  }
+  if (cuVisSvg) {
+    ClearCuvis();
+  }
+
+  $("#visContainerDiv").toggleClass( "visContainer", false );
+  $("#visContainerDiv").toggleClass( "visContainer1", true );
+  $("#outercontainer").append('<div class="visContainer2" id="visContainerDiv2"></div>');
+  tc.Redraw();
+
   let Ymax = metrics.maxMemoryOps;
   let Ymin = 0;
   let Xmax = metrics.cu[0].instActivity.length;
   let Xmin = 0;
-  let padding = [0, 30, 20, 10];
-  let container = d3.select("#visContainerDiv");
+  let padding = [0, 0, 20, 10];
+  let container = d3.select("#visContainerDiv2");
   let width = parseInt(container.style("width"), 10);
   let height = parseInt(container.style("height"), 10);
   let xScale = d3.scale.linear().domain([Xmin, Xmax]).range([0, width - (padding[2] + padding[3])]).clamp(true);
   let yScale = d3.scale.linear().domain([Ymin, Ymax]).range([0, height - (padding[0] + padding[1])]);
-  let xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickSubdivide(true).tickSize(8).tickPadding(8);
-  let yAxis = d3.svg.axis().scale(yScale).orient("left").tickSize(0);
+  //let xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickSubdivide(true).tickSize(8).tickPadding(8);
+ // let yAxis = d3.svg.axis().scale(yScale).orient("left").tickSize(0);
 
   memVisSvg = container.append('svg').attr('width', width).attr('height', height);
   memVisSvg.append("g").attr("class", "x axis")
     .attr("transform", "translate(" + padding[2] + ", " + (height - padding[1]) + ")")
-    .transition().call(xAxis);
+    //.transition().call(xAxis);
   memVisSvg.append("g").attr("class", "y axis")
     .attr("transform", "translate(" + padding[2] + ", 0)")
-    .transition().call(yAxis);
+   // .transition().call(yAxis);
 
   let data = metrics.memory;
   let area = d3.svg.area()

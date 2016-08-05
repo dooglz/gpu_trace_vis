@@ -36,11 +36,46 @@ class InstructionMetric {
   }
 }
 
+let parser;
+let metricsGen;
+let loadingDiv = $('#loading-indicator');
+let loadingTextDiv = $('#load-Text');
+
 function Init(file) {
+  loadingDiv.show();
+  console.log(file.substring(0, 200));
+  parser = ParseTrace(file);
+  Init2();
+}
+function Init2() {
+  let p = parser.next();
+  if (!p.done) {
+    setTimeout(function() { Init2() }, 0);
+    loadingTextDiv.html("Stage 1: " + Math.floor(p.value) + "%");
+  } else {
+    metricsGen = CalcMetrics();
+    Init3();
+  }
+}
+function Init3(file) {
+  let p = metricsGen.next();
+  if (!p.done) {
+    setTimeout(function() { Init3() }, 0);
+    loadingTextDiv.html("Stage 2: " + Math.floor(p.value) + "%");
+  } else {
+    InitVis();
+    loadingDiv.hide();
+  }
+}
+
+
+function InitWork(file) {
   console.log(file.substring(0, 200));
   ParseTrace(file);
+  yield;
   CalcMetrics();
-  InitVis();
+  yield;
+
 }
 
 function OpenFileFromXHR(name) {
@@ -115,7 +150,7 @@ function parseToObj(line) {
 var Instuctions;
 var memops;
 var metrics;
-function ParseTrace(trace) {
+function* ParseTrace(trace) {
   var allTextLines = [];
   allTextLines = trace.split(/\r\n|\n/);
   trace = "";
@@ -127,8 +162,11 @@ function ParseTrace(trace) {
   memops = [];
   metrics = {};
   metrics.wavefronts = [];
-  allTextLines.forEach(v => {
-    v = v.trim();
+  for (var i = 0; i < allTextLines.length; ++i) {
+    if (i > 0 && i % 4000 == 0) {
+      yield ((i / allTextLines.length) * 100);
+    }
+    let v = allTextLines[i].trim()
     if (v.startsWith("c clk=")) {
       // clock
       clock = parseInt(v.substring(6), 10);
@@ -173,7 +211,7 @@ function ParseTrace(trace) {
         inst.end = clock;
       }
     }
-  });
+  }
 
   metrics.wfCount = mostWF + 1;
   metrics.cuCount = mostCU + 1;
@@ -184,7 +222,8 @@ function ParseTrace(trace) {
 }
 
 var cuocc;
-function CalcMetrics(trace) {
+function* CalcMetrics(trace2) {
+  let trace = trace2;
   metrics.globalMaxInstActivity = 0; // most instructions in flight at any one time on any CU
   metrics.globalMaxWfInstActivity = 0; // most instructions in flight at any one time on a single WF on any CU
   metrics.globalMaxWfActivity = 0; // Most wavefronts doing anything at one time on any cu;
@@ -211,9 +250,14 @@ function CalcMetrics(trace) {
       metrics.cu[i].wfActivity[k] = new Array(metrics.wfCount);
       metrics.cu[i].wfActivity[k].fill(false);
     }
+    yield null;
   }
 
-  Instuctions.forEach(i => {
+  for (var jj = 0; jj < Instuctions.length; ++jj) {
+    let i = Instuctions[jj];
+    if (jj > 0 && jj % 1000 == 0) {
+      yield ((jj / Instuctions.length) * 100);
+    }
     // oocupancy
     for (let j = (i.start - metrics.startTick); j < ((i.end - 1) - metrics.startTick); j++) {
       metrics.cu[i.cu].instActivity[j]++;
@@ -238,7 +282,7 @@ function CalcMetrics(trace) {
     } else {
       metrics.cu[i.cu].asms.set(i.name, new InstructionMetric(i.name, i.end - i.start));
     }
-  });
+  };
   let mostCalled = 0;
   let Expesnive = 0;
   let ExpesniveA = 0;
@@ -266,15 +310,17 @@ function CalcMetrics(trace) {
   console.log(`Longest Running:`, mostTicks, mostTicks.tickTotal);
 
   metrics.memory = new Array(metrics.ticks);
+  metrics.memory.fill(0);
   metrics.maxMemoryOps = 0;
-  for (let i = 0; i < metrics.ticks; i++) {
-    metrics.memory[i] = 0;
-    for (let j = 0; j < memops.length; j++) {
-      let m = memops[j];
-      if (m.start <= metrics.startTick + i && m.end >= metrics.startTick + i) {
-        metrics.memory[i]++;
-      }
-      metrics.maxMemoryOps = Math.max(metrics.maxMemoryOps, metrics.memory[i]);
+
+  for (let j = 0; j < memops.length; j++) {
+    if (j > 0 && j % 400 == 0) {
+      yield ((j / memops.length) * 100);
+    }
+    let m = memops[j];
+    for (let i = m.start; i < m.end + 1; i++) {
+      metrics.memory[i - metrics.startTick]++;
+      metrics.maxMemoryOps = Math.max(metrics.maxMemoryOps, metrics.memory[i - metrics.startTick]);
     }
   }
 }

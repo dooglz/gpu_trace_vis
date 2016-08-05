@@ -10,6 +10,28 @@
 	margin: auto;
 	border: 1px	solid black;
 }
+.visContainer1{
+	background-color: #FAFAFA;
+	height: 600px;
+	max-height: 600px;
+	min-height: 600px;
+	width: 100%;
+	max-width: 100%;
+	min-width: 100%;
+	margin: auto;
+	border: 1px	solid black;
+}
+.visContainer2{
+	background-color: #FAFAFA;
+	height: 120px;
+	max-height: 120px;
+	min-height: 120px;
+	width: 100%;
+	max-width: 100%;
+	min-width: 100%;
+	margin: auto;
+	border: 1px	solid black;
+}
 
 .node {
     fill: #ccc;
@@ -39,4 +61,13 @@
 
 .area {
   fill: steelblue;
+}
+
+#loading-indicator {
+  margin: auto;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+	font-size: xx-large;
+	font-weight: bold;
+	text-align: center;
 }

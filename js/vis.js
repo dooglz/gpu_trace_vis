@@ -55,9 +55,9 @@ function ClearMemvis() {
   $("#visContainerDiv").toggleClass( "visContainer", true );
   $("#visContainerDiv").toggleClass( "visContainer1", false );
   $("#visContainerDiv2").remove();
-
-   tc.Redraw();
-
+if (tc) {
+ tc.Redraw();
+  }
 }
 function handleMemCheck(cb) {
   if(cb.checked){

@@ -42,6 +42,8 @@ let loadingDiv = $('#loading-indicator');
 let loadingTextDiv = $('#load-Text');
 
 function Init(file) {
+  ClearMemvis();
+
   loadingDiv.show();
   console.log(file.substring(0, 200));
   parser = ParseTrace(file);
@@ -79,11 +81,12 @@ function InitWork(file) {
 }
 
 function OpenFileFromXHR(name) {
+  console.log("data/" + name);
   let jqxhr = $.get("data/" + name, function(data2) {
-    Init(name);
+    Init(data2);
   });
   jqxhr.fail(function(e) {
-    console.log("error", e);
+    console.log("error Loading File from net", e);
   });
 }
 

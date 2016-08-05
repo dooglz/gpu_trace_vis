@@ -312,6 +312,12 @@ function* CalcMetrics(trace2) {
   metrics.memory = new Array(metrics.ticks);
   metrics.memory.fill(0);
   metrics.maxMemoryOps = 0;
+  metrics.memoryLoad = new Array(metrics.ticks);
+  metrics.memoryLoad.fill(0);
+  metrics.maxMemoryLoadOps = 0;
+  metrics.memoryStore = new Array(metrics.ticks);
+  metrics.memoryStore.fill(0);
+  metrics.maxMemoryStoreOps = 0;
 
   for (let j = 0; j < memops.length; j++) {
     if (j > 0 && j % 400 == 0) {
@@ -321,6 +327,15 @@ function* CalcMetrics(trace2) {
     for (let i = m.start; i < m.end + 1; i++) {
       metrics.memory[i - metrics.startTick]++;
       metrics.maxMemoryOps = Math.max(metrics.maxMemoryOps, metrics.memory[i - metrics.startTick]);
+      if (m.type === "load") {
+        metrics.memoryLoad[i - metrics.startTick]++;
+        metrics.maxMemoryLoadOps = Math.max(metrics.maxMemoryLoadOps, metrics.memoryLoad[i - metrics.startTick]);
+      } else if (m.type === "store" || m.type === "nc_store") {
+        metrics.memoryStore[i - metrics.startTick]++;
+        metrics.maxMemoryStoreOps = Math.max(metrics.maxMemoryStoreOps, metrics.memoryStore[i - metrics.startTick]);
+      }else{
+        console.warn("Mmeory op type: " + m.type);
+      }
     }
   }
 }

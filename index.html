@@ -20,14 +20,15 @@
 			</div>
 		</div>
 		<div class="controlContainer" id="controlContainerDiv">
-			<input type='file' accept='text/plain' onchange='openFileFromDisk(event)'>
 			<button type="button" onclick='InitVis()'>WaveFront View</button>
 			<button type="button" onclick='ShowCuvis()'>Compute Unit View</button> CU colour Code:
 			<input type="checkbox" id="cbox1" value="checkbox1" onchange="{showWfCu = !showWfCu}"> Show Memory:
 			<input type="checkbox" id="cbox2" value="checkbox2" onchange="handleMemCheck(this);"><br>
 		</div>
 		</hr>
-		<div class="controlContainer" id="filesDiv"></div>
+		<div class="controlContainer" id="filesDiv">
+						<input type='file' accept='text/plain' onchange='openFileFromDisk(event)'>
+		</div>
 	</div>
 	<div id="loading-indicator" style="display:none">
 		<img src="img/loading.gif" id="loading-indicator" /><br>

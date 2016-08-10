@@ -139,7 +139,7 @@ function ShowCuvis() {
   let Ymin = 0;
   let Xmax = metrics.cu[0].instActivity.length;
   let Xmin = 0;
-  let padding = [0, 30, 20, 10];
+  let padding = [0, 48, 30, 5];
   let container = d3.select("#visContainerDiv");
   let width = parseInt(container.style("width"), 10);
   let height = parseInt(container.style("height"), 10);
@@ -151,12 +151,27 @@ function ShowCuvis() {
   let yAxis = d3.svg.axis().scale(yScale).orient("left").tickSize(0);
 
   cuVisSvg = container.append('svg').attr('width', width).attr('height', height);
-  cuVisSvg.append("g").attr("class", "x axis")
+
+  let xax = cuVisSvg.append("g");
+  xax.attr("class", "x axis")
     .attr("transform", "translate(" + padding[2] + ", " + (height - padding[1]) + ")")
     .transition().call(xAxis);
-  cuVisSvg.append("g").attr("class", "y axis")
+
+  xax.append("text")
+    .attr("transform", "translate(" + xScale.range()[1] / 2 + ",40)")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "middle")
+    .text("(simulated) GPU Ticks");
+
+  let yax = cuVisSvg.append("g");
+  yax.attr("class", "y axis")
     .attr("transform", "translate(" + padding[2] + ", 0)")
     .transition().call(yAxis);
+  yax.append("text")
+    .attr("transform", "translate(-18," + yScale.rangeExtent()[1] / 2 + ") rotate(-90)")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "middle")
+    .text("Compute Unit ID");
 
 
   for (let i = 0; i < numberOfLanes; i++) {

@@ -52,17 +52,17 @@ function ClearMemvis() {
   if (memVisSvg) {
     memVisSvg.remove();
   }
-  $("#visContainerDiv").toggleClass( "visContainer", true );
-  $("#visContainerDiv").toggleClass( "visContainer1", false );
+  $("#visContainerDiv").toggleClass("visContainer", true);
+  $("#visContainerDiv").toggleClass("visContainer1", false);
   $("#visContainerDiv2").remove();
-if (tc) {
- tc.Redraw();
+  if (tc) {
+    tc.Redraw();
   }
 }
 function handleMemCheck(cb) {
-  if(cb.checked){
+  if (cb.checked) {
     ShowMemVis();
-  }else{
+  } else {
     ClearMemvis();
   }
 }
@@ -75,12 +75,12 @@ function ShowMemVis() {
     ClearCuvis();
   }
 
-  $("#visContainerDiv").toggleClass( "visContainer", false );
-  $("#visContainerDiv").toggleClass( "visContainer1", true );
+  $("#visContainerDiv").toggleClass("visContainer", false);
+  $("#visContainerDiv").toggleClass("visContainer1", true);
   $("#outercontainer").append('<div class="visContainer2" id="visContainerDiv2"></div>');
   tc.Redraw();
 
-  let Ymax = Math.max(metrics.maxMemoryStoreOps,metrics.maxMemoryLoadOps);
+  let Ymax = Math.max(metrics.maxMemoryStoreOps, metrics.maxMemoryLoadOps);
   let Ymin = 0;
   let Xmax = metrics.cu[0].instActivity.length;
   let Xmin = 0;
@@ -89,7 +89,7 @@ function ShowMemVis() {
   let width = parseInt(container.style("width"), 10);
   let height = parseInt(container.style("height"), 10);
   let xScale = d3.scale.linear().domain([Xmin, Xmax]).range([0, width - (padding[2] + padding[3])]).clamp(true);
-  let yScale = d3.scale.linear().domain([Ymin, Ymax]).range([0, height/2 - (padding[0] + padding[1])]);
+  let yScale = d3.scale.linear().domain([Ymin, Ymax]).range([0, height / 2 - (padding[0] + padding[1])]);
 
   memVisSvg = container.append('svg').attr('width', width).attr('height', height);
 
@@ -103,17 +103,32 @@ function ShowMemVis() {
       return yScale(Ymax) - yScale(d);
     });
 
-  memVisSvg.append("g")
+  let loads = memVisSvg.append("g");
+  loads.attr("height", height / 2)
     .attr("transform", "translate(" + padding[2] + ",0)").append("path")
     .datum(metrics.memoryLoad)
     .attr("d", area)
     .attr("fill", "#1f77b4");
 
- memVisSvg.append("g")
-    .attr("transform", "translate(" + padding[2] + ","+height/2+")").append("path")
+
+
+  loads.append("text")
+    .attr("transform", "translate(0,20)")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "left")
+    .text("Load Ops");
+
+  let stores = memVisSvg.append("g");
+  stores.attr("height", height / 2)
+    .attr("transform", "translate(" + padding[2] + "," + height / 2 + ")").append("path")
     .datum(metrics.memoryStore)
     .attr("d", area)
     .attr("fill", "#d62728");
+  stores.append("text")
+    .attr("transform", "translate(0,20)")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "left")
+    .text("Store Ops");
 }
 
 

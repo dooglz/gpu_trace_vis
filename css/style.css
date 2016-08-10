@@ -4,9 +4,9 @@
 
 .visContainer{
 	background-color: #FAFAFA;
-	height: 720px;
-	max-height: 720px;
-	min-height: 720px;
+	height: 850px;
+	max-height: 850px;
+	min-height: 850px;
 	width: 100%;
 	max-width: 100%;
 	min-width: 100%;
@@ -15,9 +15,9 @@
 }
 .visContainer1{
 	background-color: #FAFAFA;
-	height: 600px;
-	max-height: 600px;
-	min-height: 600px;
+	height: 730px;
+	max-height: 730px;
+	min-height: 730px;
 	width: 100%;
 	max-width: 100%;
 	min-width: 100%;

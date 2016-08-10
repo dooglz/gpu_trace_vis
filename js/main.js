@@ -4,6 +4,10 @@
 
 $(document).ready(function() {
   GetFilesList();
+  INSTRUCTIONTYPEARR = [];
+  for (let propt in INSTRUCTIONTYPE) {
+    INSTRUCTIONTYPEARR.push(INSTRUCTIONTYPE[propt]);
+  }
 });
 
 class ComputeUnitOccupancy {
@@ -342,6 +346,7 @@ function* CalcMetrics(trace2) {
     }
   }
 }
+var INSTRUCTIONTYPEARR = [];
 
 var INSTRUCTIONTYPE = {
   SCALER: { value: 0, name: "Scaler", prefix: "S_" },
@@ -350,6 +355,7 @@ var INSTRUCTIONTYPE = {
   IMAGE: { value: 3, name: "Image Memory", prefix: "IMAGE_" },
   TBUF: { value: 4, name: "Typed Buffer", prefix: "TBUFFER_" },
 };
+
 
 function detemineAsmType(ss) {
   for (var propt in INSTRUCTIONTYPE) {

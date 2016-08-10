@@ -186,9 +186,13 @@ function* ParseTrace(trace) {
       memops.push(om);
     } else if (v.startsWith("mem.end_access name=")) {
       let om = parseToObj(v);
-      let inst = memops.find(it => {
-        return (om.name === it.name);
-      });
+      let inst = undefined;
+      for(let j = memops.length; j > 0 ; --j){
+        if(memops[j-1].name === om.name){
+        inst = memops[j-1];
+        break;
+        }
+      }
       if (inst === undefined) {
         console.error(om.name);
       } else {
@@ -211,9 +215,13 @@ function* ParseTrace(trace) {
       // parseToObj(v);
     } else if (v.startsWith("si.end_inst")) {
       let oo = parseToObj(v);
-      let inst = Instuctions.find(it => {
-        return (oo.id === it.id && oo.cu === it.cu);
-      });
+      let inst = undefined;
+      for(let j = Instuctions.length; j > 0 ; --j){
+        if(oo.id === Instuctions[j-1].id && oo.cu === Instuctions[j-1].cu){
+        inst = Instuctions[j-1];
+        break;
+        }
+      }
       if (inst === undefined) {
         console.error(oo.id + "_" + oo.cu);
       } else {

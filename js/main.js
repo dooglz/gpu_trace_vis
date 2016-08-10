@@ -180,6 +180,22 @@ function* ParseTrace(trace) {
       if (startTick === -1) {
         startTick = clock;
       }
+    } else if (v.startsWith("mem.new_access name=")) {
+      let om = parseToObj(v);
+      om.start = clock;
+      memops.push(om);
+    } else if (v.startsWith("mem.end_access name=")) {
+      let om = parseToObj(v);
+      let inst = memops.find(it => {
+        return (om.name === it.name);
+      });
+      if (inst === undefined) {
+        console.error(om.name);
+      } else {
+        inst.end = clock;
+      }
+    } else if (v.startsWith("mem")) {
+
     } else if (v.startsWith("si.new_inst")) {
       let oo = parseToObj(v);
       mostCU = oo.cu > mostCU ? oo.cu : mostCU;
@@ -203,20 +219,9 @@ function* ParseTrace(trace) {
       } else {
         inst.end = clock;
       }
-    } else if (v.startsWith("mem.new_access name=")) {
-      let om = parseToObj(v);
-      om.start = clock;
-      memops.push(om);
-    } else if (v.startsWith("mem.end_access name=")) {
-      let om = parseToObj(v);
-      let inst = memops.find(it => {
-        return (om.name === it.name);
-      });
-      if (inst === undefined) {
-        console.error(om.name);
-      } else {
-        inst.end = clock;
-      }
+
+    } else {
+      console.warn("unkown line: ", i, v);
     }
   }
 
@@ -340,7 +345,7 @@ function* CalcMetrics(trace2) {
       } else if (m.type === "store" || m.type === "nc_store") {
         metrics.memoryStore[i - metrics.startTick]++;
         metrics.maxMemoryStoreOps = Math.max(metrics.maxMemoryStoreOps, metrics.memoryStore[i - metrics.startTick]);
-      }else{
+      } else {
         console.warn("Mmeory op type: " + m.type);
       }
     }

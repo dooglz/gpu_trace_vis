@@ -100,12 +100,12 @@ class TaskChart {
                     .attr("y", -(3 * lh) / 4)
                     .attr("width", lh / 2)
                     .attr("height", lh / 2)
-                    .style("fill", function(d) { return catagoryColourScale20(d.value) });
+                    .style("fill", function(d) { return catagoryColourScale10(d.value) });
 
                 g.append("text")
                     .attr("x", (lh / 2) + 2)
                     .attr("y", -lh / 4)
-                    .style("fill", function(d) { return catagoryColourScale20(d.value) })
+                    .style("fill", function(d) { return catagoryColourScale10(d.value) })
                     .text(function(d) { return d.name });
             });
     }

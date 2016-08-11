@@ -1,13 +1,14 @@
 
 /* global GetFilesList InitVis*/
 /* exported InitVis*/
-
+var totalChartSpaceHeight; 
 $(document).ready(function() {
   GetFilesList();
   INSTRUCTIONTYPEARR = [];
   for (let propt in INSTRUCTIONTYPE) {
     INSTRUCTIONTYPEARR.push(INSTRUCTIONTYPE[propt]);
   }
+  totalChartSpaceHeight = parseInt(d3.select("#outercontainer").style("height"), 10);
 });
 
 class ComputeUnitOccupancy {
@@ -46,13 +47,13 @@ let loadingDiv = $('#loading-indicator');
 let loadingTextDiv = $('#load-Text');
 
 function Init(file) {
-  ClearMemvis();
-
+  CloseMemvis();
   loadingDiv.show();
   console.log(file.substring(0, 200));
   parser = ParseTrace(file);
   Init2();
 }
+
 function Init2() {
   let p = parser.next();
   if (!p.done) {
@@ -63,6 +64,7 @@ function Init2() {
     Init3();
   }
 }
+
 function Init3(file) {
   let p = metricsGen.next();
   if (!p.done) {

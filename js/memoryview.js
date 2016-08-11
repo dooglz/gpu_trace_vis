@@ -1,12 +1,8 @@
+/* global tc cuVisSvg ClearCuvis d3 totalChartSpaceHeight metrics*/
 let memVisSvg = null;
+let minH;
 
-function ClearCuvis() {
-  if (cuVisSvg) {
-    cuVisSvg.remove();
-  }
-}
-
-function ClearMemvis() {
+function CloseMemvis() {
   if (tc) {
     tc.Clear();
   }
@@ -16,8 +12,6 @@ function ClearMemvis() {
   if (memVisSvg) {
     memVisSvg.remove();
   }
-  $("#visContainerDiv").toggleClass("visContainer", true);
-  $("#visContainerDiv").toggleClass("visContainer1", false);
   $("#visContainerDiv2").remove();
   if (tc) {
     tc.Redraw();
@@ -28,13 +22,43 @@ function handleMemCheck(cb) {
   if (cb.checked) {
     ShowMemVis();
   } else {
-    ClearMemvis();
+    CloseMemvis();
   }
 }
 
+var dragResize = d3.behavior.drag()
+  .on('drag', function() {
+    let div1 = d3.select("#visContainerDiv");
+    let div2 = d3.select("#visContainerDiv2");
+
+    // Determine resizer position relative to resizable (parent)
+    let y = d3.mouse(document.body)[1];
+    // Avoid negative or really small widths
+    y = Math.min(Math.max(200, y), totalChartSpaceHeight - minH);
+
+    div1.style('height', y + 'px');
+    div1.style('min-height', y + 'px');
+    div2.style('height', (totalChartSpaceHeight - y) + 'px');
+    div2.style('min-height', (totalChartSpaceHeight - y) + 'px');
+  })
+  .on('dragstart', function() {
+    tc.Clear();
+    ClearMemvis();
+  })
+  .on('dragend', function() {
+    tc.Redraw();
+    MemVisRedraw();
+  });
+
+function ClearMemvis() {
+  if (memVisSvg) {
+    memVisSvg.remove();
+  }
+}
 
 function ShowMemVis() {
-  //make the current vis smaller
+  CloseMemvis();
+  // make the current vis smaller
   if (tc) {
     tc.Clear();
   }
@@ -42,11 +66,22 @@ function ShowMemVis() {
     ClearCuvis();
   }
 
-  $("#visContainerDiv").toggleClass("visContainer", false);
-  $("#visContainerDiv").toggleClass("visContainer1", true);
-  $("#outercontainer").append('<div class="visContainer2" id="visContainerDiv2"></div>');
-  tc.Redraw();
+  $("#visContainerDiv").css("height", totalChartSpaceHeight * 0.8);
+  $("#outercontainer").append('<div class="visContainer2" id="visContainerDiv2"><div class="resizer"></div></div>');
+  $("#visContainerDiv2").css("height", totalChartSpaceHeight * 0.2)
 
+  tc.Redraw();
+  let container = d3.select("#visContainerDiv2");
+  var resizer = container.select('.resizer');
+  minH = parseInt(container.style("height"), 10);
+  resizer.call(dragResize);
+
+  MemVisRedraw();
+}
+
+function MemVisRedraw() {
+  ClearMemvis();
+  let container = d3.select("#visContainerDiv2");
   let maxes = [
     metrics.maxMemoryLoadOps,
     metrics.maxMemoryStoreOps,
@@ -58,7 +93,7 @@ function ShowMemVis() {
     metrics.mem_maxsimul_sgprStore,
     metrics.mem_maxsimul_vgprLoad,
     metrics.mem_maxsimul_vgprStore
-  ]
+  ];
   let labels = [
     "Total Load Ops",
     "Total Store Ops",
@@ -70,7 +105,7 @@ function ShowMemVis() {
     "SGPR stores",
     "VGPR loads",
     "VGPR stores"
-  ]
+  ];
   let datums = [
     metrics.memoryLoad,
     metrics.memoryStore,
@@ -82,7 +117,7 @@ function ShowMemVis() {
     metrics.sgprStore,
     metrics.vgprLoad,
     metrics.vgprStore
-  ]
+  ];
 
   let filter = [true, true, true, true, false, false, false, false, false, false];
   let amount = filter.reduce(function(p, c) {
@@ -99,7 +134,6 @@ function ShowMemVis() {
   let Xmax = metrics.cu[0].instActivity.length;
   let Xmin = 0;
   let padding = [0, 2, 20, 10];
-  let container = d3.select("#visContainerDiv2");
   let width = parseInt(container.style("width"), 10);
   let height = parseInt(container.style("height"), 10);
   let xScale = d3.scale.linear().domain([Xmin, Xmax]).range([0, width - (padding[2] + padding[3])]).clamp(true);
@@ -135,32 +169,4 @@ function ShowMemVis() {
       ++j;
     }
   }
-
-  /*
-    {
-      let loads = memVisSvg.append("g");
-      loads.attr("height", height / 2)
-        .attr("transform", "translate(" + padding[2] + ",0)").append("path")
-        .datum(metrics.memoryLoad)
-        .attr("d", area)
-        .attr("fill", "#1f77b4");
-      loads.append("text")
-        .attr("transform", "translate(0,20)")
-        .attr("font-weight", "bold")
-        .attr("text-anchor", "left")
-        .text("Load Ops");
-    }
-  
-    let stores = memVisSvg.append("g");
-    stores.attr("height", height / 2)
-      .attr("transform", "translate(" + padding[2] + "," + height / 2 + ")").append("path")
-      .datum(metrics.memoryStore)
-      .attr("d", area)
-      .attr("fill", "#d62728");
-    stores.append("text")
-      .attr("transform", "translate(0,20)")
-      .attr("font-weight", "bold")
-      .attr("text-anchor", "left")
-      .text("Store Ops");
-      */
 }

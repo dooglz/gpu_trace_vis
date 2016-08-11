@@ -25,13 +25,16 @@ class TaskChart {
         this.fillfunc = this.defaultfillFunc;
     }
     Clear() {
-        this.svg.remove();
+        if(this.svg){
+            this.svg.remove();
+        }
     }
     Redraw() {
         this.width = parseInt(this.container.style("width"));
         this.height = parseInt(this.container.style("height"));
         this.InitDomains();
         console.log(this.container, this.width, this.height);
+         this.Clear();
         this.svg = this.container.append('svg').attr('width', this.width).attr('height', this.height);
 
         //Create Axises

@@ -21,6 +21,12 @@ let showWfCu = false;
 let tc;
 let cuVisSvg = null;
 
+function ClearCuvis() {
+  if (cuVisSvg) {
+    cuVisSvg.remove();
+  }
+}
+
 function InitVis() {
   if (tc) {
     tc.Clear();

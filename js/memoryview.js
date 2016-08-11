@@ -2,6 +2,20 @@
 let memVisSvg = null;
 let minH;
 
+let labels = [
+  "Total Load Ops",
+  "Total Store Ops",
+  "Global Loads",
+  "Global Stores",
+  "LDS Loads",
+  "LDS Stores",
+  "SGPR loads",
+  "SGPR stores",
+  "VGPR loads",
+  "VGPR stores"
+];
+let filter = [true, true, true, true, false, false, false, false, false, false];
+
 function CloseMemvis() {
   if (tc) {
     tc.Clear();
@@ -12,7 +26,11 @@ function CloseMemvis() {
   if (memVisSvg) {
     memVisSvg.remove();
   }
+
   $("#visContainerDiv2").remove();
+  $("#membtns").remove();
+  let div1 = d3.select("#visContainerDiv");
+  div1.style('height', totalChartSpaceHeight + 'px');
   if (tc) {
     tc.Redraw();
   }
@@ -35,11 +53,8 @@ var dragResize = d3.behavior.drag()
     let y = d3.mouse(document.body)[1];
     // Avoid negative or really small widths
     y = Math.min(Math.max(200, y), totalChartSpaceHeight - minH);
-
     div1.style('height', y + 'px');
-    div1.style('min-height', y + 'px');
     div2.style('height', (totalChartSpaceHeight - y) + 'px');
-    div2.style('min-height', (totalChartSpaceHeight - y) + 'px');
   })
   .on('dragstart', function() {
     tc.Clear();
@@ -76,6 +91,18 @@ function ShowMemVis() {
   minH = parseInt(container.style("height"), 10);
   resizer.call(dragResize);
 
+  let btndiv = $("<div>", { id: "membtns", class: 'controlContainer' });
+  for (let label = 0; label < labels.length; ++label) {
+    let btn = $("<input>", { type: "checkbox", id: labels[label], onchange: 2 });
+    btn.prop('checked', filter[label]);
+    btn.change(function(t) {
+      filter[label] = $(this).is(':checked');
+      MemVisRedraw();
+    });
+    btndiv.append("  "+labels[label]);
+    btndiv.append(btn);
+  }
+  $("#controlContainerDiv").append(btndiv);
   MemVisRedraw();
 }
 
@@ -94,18 +121,6 @@ function MemVisRedraw() {
     metrics.mem_maxsimul_vgprLoad,
     metrics.mem_maxsimul_vgprStore
   ];
-  let labels = [
-    "Total Load Ops",
-    "Total Store Ops",
-    "Global Loads",
-    "Global Stores",
-    "LDS Loads",
-    "LDS Stores",
-    "SGPR loads",
-    "SGPR stores",
-    "VGPR loads",
-    "VGPR stores"
-  ];
   let datums = [
     metrics.memoryLoad,
     metrics.memoryStore,
@@ -119,7 +134,7 @@ function MemVisRedraw() {
     metrics.vgprStore
   ];
 
-  let filter = [true, true, true, true, false, false, false, false, false, false];
+
   let amount = filter.reduce(function(p, c) {
     return c ? ++p : p;
   }, 0);
@@ -160,7 +175,7 @@ function MemVisRedraw() {
         .attr("transform", "translate(" + padding[2] + "," + j * (height / amount) + ")").append("path")
         .datum(datums[i])
         .attr("d", area)
-        .attr("fill", "#1f77b4");
+        .attr("fill", catagoryColourScale10(j));
       bar.append("text")
         .attr("transform", "translate(0,20)")
         .attr("font-weight", "bold")

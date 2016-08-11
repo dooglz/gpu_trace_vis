@@ -361,14 +361,41 @@ function* CalcMetrics(trace2) {
   metrics.memoryStore = new Array(metrics.ticks);
   metrics.memoryStore.fill(0);
   metrics.maxMemoryStoreOps = 0;
-  metrics.mem_scalerLoads = 0;
-  metrics.mem_vectorLoads = 0;
-  metrics.mem_globalLoads = 0;
-  metrics.mem_ldsLoads = 0;
-  metrics.mem_scalerStores = 0;
-  metrics.mem_vectorStores = 0;
-  metrics.mem_globalStores = 0;
-  metrics.mem_ldsStores = 0;
+
+  metrics.globalStore = new Array(metrics.ticks);
+  metrics.globalStore.fill(0);
+  metrics.mem_maxsimul_globalStore = 0;
+  metrics.ldsStore = new Array(metrics.ticks);
+  metrics.ldsStore.fill(0);
+  metrics.mem_maxsimul_ldsStore = 0;
+  metrics.sgprStore = new Array(metrics.ticks);
+  metrics.sgprStore.fill(0);
+  metrics.mem_maxsimul_sgprStore = 0;
+  metrics.vgprStore = new Array(metrics.ticks);
+  metrics.vgprStore.fill(0);
+  metrics.mem_maxsimul_vgprStore = 0;
+
+  metrics.globalLoad = new Array(metrics.ticks);
+  metrics.globalLoad.fill(0);
+  metrics.mem_maxsimul_globalLoad = 0;
+  metrics.ldsLoad = new Array(metrics.ticks);
+  metrics.ldsLoad.fill(0);
+  metrics.mem_maxsimul_ldsLoad = 0;
+  metrics.sgprLoad = new Array(metrics.ticks);
+  metrics.sgprLoad.fill(0);
+  metrics.mem_maxsimul_sgprLoad = 0;
+  metrics.vgprLoad = new Array(metrics.ticks);
+  metrics.vgprLoad.fill(0);
+  metrics.mem_maxsimul_vgprLoad = 0;
+
+  metrics.mem_total_scalerLoads = 0;
+  metrics.mem_total_vectorLoads = 0;
+  metrics.mem_total_globalLoads = 0;
+  metrics.mem_total_ldsLoads = 0;
+  metrics.mem_total_scalerStores = 0;
+  metrics.mem_total_vectorStores = 0;
+  metrics.mem_total_globalStores = 0;
+  metrics.mem_total_ldsStores = 0;
 
   metrics.mem_routes = {};
 
@@ -378,22 +405,22 @@ function* CalcMetrics(trace2) {
     }
     let m = memops[j];
     if (Object.keys(m.memoryRoute).length > 1) {
-      console.error(m);
+      // console.error(m);
     } else {
       for (var propertyName in m.memoryRoute) {
         metrics.mem_routes[propertyName] = 1;
       }
     }
     if (m.type === "load") {
-      if (m.memoryRoute.vector !== undefined) { metrics.mem_vectorLoads++; }
-      if (m.memoryRoute.scalar !== undefined) { metrics.mem_scalerLoads++; }
-      if (m.memoryRoute.gm !== undefined) { metrics.mem_globalLoads++; }
-      if (m.memoryRoute.LDS !== undefined) { metrics.mem_ldsLoads++; }
+      if (m.memoryRoute.vector !== undefined) { metrics.mem_total_vectorLoads++; }
+      if (m.memoryRoute.scalar !== undefined) { metrics.mem_total_scalerLoads++; }
+      if (m.memoryRoute.gm !== undefined) { metrics.mem_total_globalLoads++; }
+      if (m.memoryRoute.LDS !== undefined) { metrics.mem_total_ldsLoads++; }
     } else if (m.type === "store" || m.type === "nc_store") {
-      if (m.memoryRoute.vector !== undefined) { metrics.mem_vectorStores++; }
-      if (m.memoryRoute.scalar !== undefined) { metrics.mem_scalerStores++; }
-      if (m.memoryRoute.gm !== undefined) { metrics.mem_globalStores++; }
-      if (m.memoryRoute.LDS !== undefined) { metrics.mem_ldsStores++; }
+      if (m.memoryRoute.vector !== undefined) { metrics.mem_total_vectorStores++; }
+      if (m.memoryRoute.scalar !== undefined) { metrics.mem_total_scalerStores++; }
+      if (m.memoryRoute.gm !== undefined) { metrics.mem_total_globalStores++; }
+      if (m.memoryRoute.LDS !== undefined) { metrics.mem_total_ldsStores++; }
     }
     for (let i = m.start; i < m.end + 1; i++) {
       metrics.memory[i - metrics.startTick]++;
@@ -401,9 +428,41 @@ function* CalcMetrics(trace2) {
       if (m.type === "load") {
         metrics.memoryLoad[i - metrics.startTick]++;
         metrics.maxMemoryLoadOps = Math.max(metrics.maxMemoryLoadOps, metrics.memoryLoad[i - metrics.startTick]);
+        if (m.memoryRoute.gm !== undefined) {
+          metrics.globalLoad[i - metrics.startTick]++;
+          metrics.mem_maxsimul_globalLoad = Math.max(metrics.mem_maxsimul_globalLoad, metrics.globalLoad[i - metrics.startTick]);
+        }
+        if (m.memoryRoute.LDS !== undefined) {
+          metrics.ldsLoad[i - metrics.startTick]++;
+          metrics.mem_maxsimul_ldsLoad = Math.max(metrics.mem_maxsimul_ldsLoad, metrics.ldsLoad[i - metrics.startTick]);
+        }
+        if (m.memoryRoute.scalar !== undefined) {
+          metrics.sgprLoad[i - metrics.startTick]++;
+          metrics.mem_maxsimul_sgprLoad = Math.max(metrics.mem_maxsimul_sgprLoad, metrics.sgprLoad[i - metrics.startTick]);
+        }
+        if (m.memoryRoute.vector !== undefined) {
+          metrics.vgprLoad[i - metrics.startTick]++;
+          metrics.mem_maxsimul_vgprLoad = Math.max(metrics.mem_maxsimul_vgprLoad, metrics.vgprLoad[i - metrics.startTick]);
+        }
       } else if (m.type === "store" || m.type === "nc_store") {
         metrics.memoryStore[i - metrics.startTick]++;
         metrics.maxMemoryStoreOps = Math.max(metrics.maxMemoryStoreOps, metrics.memoryStore[i - metrics.startTick]);
+        if (m.memoryRoute.gm !== undefined) {
+          metrics.globalStore[i - metrics.startTick]++;
+          metrics.mem_maxsimul_globalStore = Math.max(metrics.mem_maxsimul_globalStore, metrics.globalStore[i - metrics.startTick]);
+        }
+        if (m.memoryRoute.LDS !== undefined) {
+          metrics.ldsStore[i - metrics.startTick]++;
+          metrics.mem_maxsimul_ldsStore = Math.max(metrics.mem_maxsimul_ldsStore, metrics.ldsStore[i - metrics.startTick]);
+        }
+        if (m.memoryRoute.scalar !== undefined) {
+          metrics.sgprStore[i - metrics.startTick]++;
+          metrics.mem_maxsimul_sgprStore = Math.max(metrics.mem_maxsimul_sgprStore, metrics.sgprStore[i - metrics.startTick]);
+        }
+        if (m.memoryRoute.vector !== undefined) {
+          metrics.vgprStore[i - metrics.startTick]++;
+          metrics.mem_maxsimul_vgprStore = Math.max(metrics.mem_maxsimul_vgprStore, metrics.vgprStore[i - metrics.startTick]);
+        }
       } else {
         console.warn("Mmeory op type: " + m.type);
       }

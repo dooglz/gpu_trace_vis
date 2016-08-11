@@ -183,20 +183,43 @@ function* ParseTrace(trace) {
     } else if (v.startsWith("mem.new_access name=")) {
       let om = parseToObj(v);
       om.start = clock;
+      om.memoryRoute = {};
       memops.push(om);
     } else if (v.startsWith("mem.end_access name=")) {
       let om = parseToObj(v);
       let inst = undefined;
-      for(let j = memops.length; j > 0 ; --j){
-        if(memops[j-1].name === om.name){
-        inst = memops[j-1];
-        break;
+      for (let j = memops.length; j > 0; --j) {
+        if (memops[j - 1].name === om.name) {
+          inst = memops[j - 1];
+          break;
         }
       }
       if (inst === undefined) {
         console.error(om.name);
       } else {
         inst.end = clock;
+      }
+    } else if (v.startsWith("mem.access")) {
+      let om = parseToObj(v);
+      let inst = undefined;
+      for (let j = memops.length; j > 0; --j) {
+        if (memops[j - 1].name === om.name) {
+          inst = memops[j - 1];
+          break;
+        }
+      }
+      if (inst !== undefined && om.state !== undefined) {
+        let re = /((LDS)|si-(\w*)-)/;
+        let m;
+        if ((m = re.exec(om.state)) !== null) {
+          if (m.index === re.lastIndex) {
+            re.lastIndex++;
+          }
+          m = (m[2] === undefined ? m[3] : m[2]);
+          inst.memoryRoute[m] === undefined ? inst.memoryRoute[m] = 0 : inst.memoryRoute[m]++;
+        }
+      } else {
+        console.error(om.name);
       }
     } else if (v.startsWith("mem")) {
 
@@ -216,10 +239,10 @@ function* ParseTrace(trace) {
     } else if (v.startsWith("si.end_inst")) {
       let oo = parseToObj(v);
       let inst = undefined;
-      for(let j = Instuctions.length; j > 0 ; --j){
-        if(oo.id === Instuctions[j-1].id && oo.cu === Instuctions[j-1].cu){
-        inst = Instuctions[j-1];
-        break;
+      for (let j = Instuctions.length; j > 0; --j) {
+        if (oo.id === Instuctions[j - 1].id && oo.cu === Instuctions[j - 1].cu) {
+          inst = Instuctions[j - 1];
+          break;
         }
       }
       if (inst === undefined) {
@@ -338,12 +361,40 @@ function* CalcMetrics(trace2) {
   metrics.memoryStore = new Array(metrics.ticks);
   metrics.memoryStore.fill(0);
   metrics.maxMemoryStoreOps = 0;
+  metrics.mem_scalerLoads = 0;
+  metrics.mem_vectorLoads = 0;
+  metrics.mem_globalLoads = 0;
+  metrics.mem_ldsLoads = 0;
+  metrics.mem_scalerStores = 0;
+  metrics.mem_vectorStores = 0;
+  metrics.mem_globalStores = 0;
+  metrics.mem_ldsStores = 0;
+
+  metrics.mem_routes = {};
 
   for (let j = 0; j < memops.length; j++) {
     if (j > 0 && j % 400 == 0) {
       yield ((j / memops.length) * 100);
     }
     let m = memops[j];
+    if (Object.keys(m.memoryRoute).length > 1) {
+      console.error(m);
+    } else {
+      for (var propertyName in m.memoryRoute) {
+        metrics.mem_routes[propertyName] = 1;
+      }
+    }
+    if (m.type === "load") {
+      if (m.memoryRoute.vector !== undefined) { metrics.mem_vectorLoads++; }
+      if (m.memoryRoute.scalar !== undefined) { metrics.mem_scalerLoads++; }
+      if (m.memoryRoute.gm !== undefined) { metrics.mem_globalLoads++; }
+      if (m.memoryRoute.LDS !== undefined) { metrics.mem_ldsLoads++; }
+    } else if (m.type === "store" || m.type === "nc_store") {
+      if (m.memoryRoute.vector !== undefined) { metrics.mem_vectorStores++; }
+      if (m.memoryRoute.scalar !== undefined) { metrics.mem_scalerStores++; }
+      if (m.memoryRoute.gm !== undefined) { metrics.mem_globalStores++; }
+      if (m.memoryRoute.LDS !== undefined) { metrics.mem_ldsStores++; }
+    }
     for (let i = m.start; i < m.end + 1; i++) {
       metrics.memory[i - metrics.startTick]++;
       metrics.maxMemoryOps = Math.max(metrics.maxMemoryOps, metrics.memory[i - metrics.startTick]);

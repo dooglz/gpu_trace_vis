@@ -15,7 +15,8 @@
 
 <body>
 	<div class="container" id="mainContainerDiv">
-		<div id="outercontainer">
+		<div id="outercontainer" class="outercontainer">
+			 
 			<div class="visContainer" id="visContainerDiv">
 			</div>
 		</div>
@@ -27,7 +28,7 @@
 		</div>
 		</hr>
 		<div class="controlContainer" id="filesDiv">
-						<input type='file' accept='text/plain' onchange='openFileFromDisk(event)'>
+			<input type='file' accept='text/plain' onchange='openFileFromDisk(event)'>
 		</div>
 	</div>
 	<div id="loading-indicator" style="display:none">
@@ -44,6 +45,7 @@
 	<script type="text/javascript" src="js/utils.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>
 	<script type="text/javascript" src="js/vis.js"></script>
+	<script type="text/javascript" src="js/memoryview.js"></script>
 </body>
 
 </html>

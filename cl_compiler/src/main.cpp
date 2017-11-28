@@ -10,7 +10,8 @@
 #include <string>
 using namespace std;
 const char* kernel_code = "__kernel void hello(__global char* string)"
-"{string[0] = 'H';"
+"{double gg = 12.0;"
+"string[0] = 'H';"
 "string[1] = 'e';"
 "string[2] = 'l';"
 "string[3] = 'l';"
@@ -23,7 +24,7 @@ const char* kernel_code = "__kernel void hello(__global char* string)"
 "string[10] = 'l';"
 "string[11] = 'd';"
 "string[12] = '!';"
-"string[13] = '\0';}";
+"string[13] = 0;}";
 
 bool buildme(cl::Device& dev, cl::Context& ctx, const char* src)
 {
@@ -36,18 +37,30 @@ bool buildme(cl::Device& dev, cl::Context& ctx, const char* src)
 
   cl::Program::Sources source(1,std::make_pair(src, strlen(src)));
   cl::Program program = cl::Program(ctx, source);
+/*
+  try{
+   auto  err = clBuildProgram(src, 1, dev,"-cl-std=CL1.2", NULL, NULL);
+     if (err != CL_SUCCESS)
+      // show_build_log(src_prog, n_devices, devices, err);
+     }
+  }catch (...){
+  }
+*/
+
   try {
-    program.build(std::vector<cl::Device>{dev});
+    program.build(std::vector<cl::Device>{dev},"\0-cl-std=CL1.2 -x clc");
   }
   catch (...) {
     cl_int buildErr = CL_SUCCESS;
     auto buildInfo = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev);
-    cout << buildInfo << endl;
+    cout << "build failed\n" << buildInfo << endl;
     //for (auto &pair : buildInfo) {
      // std::cerr << pair.second << std::endl << std::endl;
     //}
     return false;
   }
+  cout << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev);
+  cout << "\nBuilt?" <<endl;
   return false;
 }
 
@@ -85,7 +98,7 @@ int main(void)
         cl::Device* tahiti_device = nullptr;
         for (unsigned int i = 0; i < devices.size(); ++i) {
           std::cout << "Device #" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
-          if(devices[i].getInfo<CL_DEVICE_NAME>() == "Tahiti"){
+          if(devices[i].getInfo<CL_DEVICE_NAME>() == "Tonga"){
            tahiti_device = &devices[i];
           }
         }
